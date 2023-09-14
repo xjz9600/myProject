@@ -132,70 +132,70 @@ func TestIfElse(t *testing.T) {
 }
 
 func TestPipeline(t *testing.T) {
-	testCases := []struct{
+	testCases := []struct {
 		name string
 
 		tpl  string
 		data any
 
 		want string
-	} {
+	}{
 		// 这些例子来自官方文档
 		// https://pkg.go.dev/text/template#hdr-Pipelines
 		{
 			name: "string constant",
-			tpl:`{{"\"output\""}}`,
+			tpl:  `{{"\"output\""}}`,
 			want: `"output"`,
 		},
 		{
 			name: "raw string constant",
-			tpl: "{{`\"output\"`}}",
+			tpl:  "{{`\"output\"`}}",
 			want: `"output"`,
 		},
 		{
 			name: "function call",
-			tpl: `{{printf "%q" "output"}}`,
+			tpl:  `{{printf "%q" "output"}}`,
 			want: `"output"`,
 		},
 		{
 			name: "take argument from pipeline",
-			tpl: `{{"output" | printf "%q"}}`,
+			tpl:  `{{"output" | printf "%q"}}`,
 			want: `"output"`,
 		},
 		{
 			name: "parenthesized argument",
-			tpl: `{{printf "%q" (print "out" "put")}}`,
+			tpl:  `{{printf "%q" (print "out" "put")}}`,
 			want: `"output"`,
 		},
 		{
 			name: "elaborate call",
 			// printf "%s%s" "out" "put"
-			tpl: `{{"put" | printf "%s%s" "out" | printf "%q"}}`,
+			tpl:  `{{"put" | printf "%s%s" "out" | printf "%q"}}`,
 			want: `"output"`,
 		},
 		{
 			name: "longer chain",
-			tpl: `{{"output" | printf "%s" | printf "%q"}}`,
+			tpl:  `{{"output" | printf "%s" | printf "%q"}}`,
 			want: `"output"`,
 		},
 		{
 			name: "with action using dot",
-			tpl: `{{with "output"}}{{printf "%q" .}}{{end}}`,
+			tpl:  `{{with "output"}}{{printf "%q" .}}{{end}}`,
 			want: `"output"`,
 		},
 		{
 			name: "with action that creates and uses a variable",
-			tpl: `{{with $x := "output" | printf "%q"}}{{$x}}{{end}}`,
+			tpl:  `{{with $x := "output" | printf "%q"}}{{$x}}{{end}}`,
 			want: `"output"`,
 		},
 		{
 			name: "with action that uses the variable in another action",
-			tpl: `{{with $x := "output"}}{{printf "%q" $x}}{{end}}`,
+			tpl:  `{{with $x := "output"}}{{printf "%q" $x}}{{end}}`,
 			want: `"output"`,
 		},
 		{
 			name: "pipeline with action that uses the variable in another action",
-			tpl: `{{with $x := "output"}}{{$x | printf "%q"}}{{end}}`,
+			tpl:  `{{with $x := "output"}}{{$x | printf "%q"}}{{end}}`,
 			want: `"output"`,
 		},
 	}
@@ -221,5 +221,5 @@ type FuncCall struct {
 }
 
 func (f FuncCall) Hello(first string, last string) string {
-	return fmt.Sprintf("%s·%s",  first, last)
+	return fmt.Sprintf("%s·%s", first, last)
 }

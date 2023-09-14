@@ -28,6 +28,12 @@ func NewServer(opts ...ServerOption) *HttpServer {
 	return server
 }
 
+func WithTplEngine(tpl TemplateEngine) ServerOption {
+	return func(server *HttpServer) {
+		server.tplEngine = tpl
+	}
+}
+
 func WithMiddleWare(mds ...Middleware) ServerOption {
 	return func(server *HttpServer) {
 		server.mds = mds
@@ -36,7 +42,8 @@ func WithMiddleWare(mds ...Middleware) ServerOption {
 
 type HttpServer struct {
 	*router
-	mds []Middleware
+	mds       []Middleware
+	tplEngine TemplateEngine
 }
 
 func (h *HttpServer) GET(path string, handleFunc HandleFunc, ms ...Middleware) {
@@ -61,6 +68,7 @@ func (h *HttpServer) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	context := &Context{
 		Response: writer,
 		Req:      request,
+		Tpl:      h.tplEngine,
 	}
 	root := h.Serve
 	for i := len(h.mds) - 1; i >= 0; i-- {

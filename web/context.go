@@ -20,6 +20,7 @@ type Context struct {
 	// 返回值
 	RespStatusCode int
 	RespData       []byte
+	Tpl            TemplateEngine
 }
 
 func (c *Context) BindJson(val any) error {
@@ -75,6 +76,17 @@ func (c *Context) RespJson(val any) {
 	c.RespData = data
 }
 
+func (c *Context) Render(templateName string, data any) {
+	temp, err := c.Tpl.Render(c.Req.Context(), templateName, data)
+	if err != nil {
+		c.RespStatusCode = http.StatusInternalServerError
+		c.RespData = []byte(err.Error())
+		return
+	}
+	c.RespStatusCode = http.StatusOK
+	c.RespData = temp
+}
+
 type stringValue struct {
 	val string
 	err error
@@ -85,4 +97,11 @@ func (s stringValue) AsInt64() (int64, error) {
 		return 0, s.err
 	}
 	return strconv.ParseInt(s.val, 10, 64)
+}
+
+func (s stringValue) AsString() (string, error) {
+	if s.err != nil {
+		return "", s.err
+	}
+	return s.val, nil
 }
