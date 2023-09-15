@@ -21,6 +21,7 @@ type Context struct {
 	RespStatusCode int
 	RespData       []byte
 	Tpl            TemplateEngine
+	CacheSession   map[string]any
 }
 
 func (c *Context) BindJson(val any) error {

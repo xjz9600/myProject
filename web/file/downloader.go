@@ -43,10 +43,12 @@ func (d *downloader) Build() web.HandleFunc {
 		}
 		fn := filepath.Base(finalPath)
 		header := ctx.Response.Header()
+		// 必须设置
 		header.Set("Content-Disposition", "attachment;filename="+fn)
 		header.Set("Content-Description", "File Transfer")
 		header.Set("Content-Type", "application/octet-stream")
 		header.Set("Content-Transfer-Encoding", "binary")
+		//设置是否使用缓存
 		header.Set("Expires", "0")
 		header.Set("Cache-Control", "must-revalidate")
 		header.Set("Pragma", "public")
