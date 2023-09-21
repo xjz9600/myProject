@@ -12,14 +12,14 @@ type User struct {
 func NewUser(name string, age int) User {
 	return User{
 		Name: name,
-		age: age,
+		age:  age,
 	}
 }
 
 func NewUserPtr(name string, age int) *User {
 	return &User{
 		Name: name,
-		age: age,
+		age:  age,
 	}
 }
 
