@@ -3,6 +3,7 @@ package orm
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"myProject/orm/internal/errs"
 	"testing"
 )
 
@@ -16,7 +17,7 @@ func Test_parseModel(t *testing.T) {
 		{
 			name:    "test model",
 			val:     TestModel{},
-			wantErr: errors.New("orm: 只支持一级指针作为输入，例如 *User"),
+			wantErr: errors.New("orm: 只支持传入结构体，例如 User"),
 		},
 		{
 			// 指针
@@ -48,22 +49,41 @@ func Test_parseModel(t *testing.T) {
 				val := &TestModel{}
 				return &val
 			}(),
-			wantErr: errors.New("orm: 只支持一级指针作为输入，例如 *User"),
+			wantErr: errors.New("orm: 只支持传入结构体，例如 User"),
 		},
 		{
 			name:    "map",
 			val:     map[string]string{},
-			wantErr: errors.New("orm: 只支持一级指针作为输入，例如 *User"),
+			wantErr: errors.New("orm: 只支持传入结构体，例如 User"),
 		},
 		{
 			name:    "slice",
 			val:     []int{},
-			wantErr: errors.New("orm: 只支持一级指针作为输入，例如 *User"),
+			wantErr: errors.New("orm: 只支持传入结构体，例如 User"),
 		},
 		{
 			name:    "basic type",
 			val:     0,
-			wantErr: errors.New("orm: 只支持一级指针作为输入，例如 *User"),
+			wantErr: errors.New("orm: 只支持传入结构体，例如 User"),
+		},
+		{
+			// 标签测试跟实现TableName接口测试
+			name: "tableName and tag",
+			val:  &TableNameTest{},
+			wantModel: &model{
+				tableName: "test_table_name",
+				fieldMap: map[string]*field{
+					"Name": {
+						colName: "test_name",
+					},
+				},
+			},
+		},
+		{
+			// 标签格式错误
+			name:    "err tag",
+			val:     &TagErrTest{},
+			wantErr: errs.NewErrInvalidTagContent("columnTest"),
 		},
 	}
 
@@ -77,6 +97,18 @@ func Test_parseModel(t *testing.T) {
 			assert.Equal(t, tc.wantModel, m)
 		})
 	}
+}
+
+type TagErrTest struct {
+	Name string `orm:"columnTest"`
+}
+
+type TableNameTest struct {
+	Name string `orm:"column=test_name"`
+}
+
+func (t *TableNameTest) TableName() string {
+	return "test_table_name"
 }
 
 func Test_underscoreName(t *testing.T) {
