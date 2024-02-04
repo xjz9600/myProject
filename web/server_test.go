@@ -24,7 +24,7 @@ func genTestRoute(mockHandleFunc HandleFunc) *router {
 		},
 		{
 			methodName: http.MethodPost,
-			path:       "/user/register",
+			path:       "/user/registry",
 		},
 		{
 			methodName: http.MethodPost,
@@ -75,8 +75,8 @@ func TestRouter_AddRoute(t *testing.T) {
 						path:     "user",
 						nodeType: FULLPATH,
 						children: map[string]*node{
-							"register": &node{
-								path:     "register",
+							"registry": &node{
+								path:     "registry",
 								nodeType: FULLPATH,
 								handle:   mockHandleFunc,
 							},
@@ -261,8 +261,8 @@ func TestRouter_findRoute(t *testing.T) {
 			wantNode: &node{
 				path: "user",
 				children: map[string]*node{
-					"register": &node{
-						path:   "register",
+					"registry": &node{
+						path:   "registry",
 						handle: mockHandleFunc,
 					},
 				},
