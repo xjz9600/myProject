@@ -1,4 +1,4 @@
-package registry
+package micro
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/balancer/base"
 	resolver2 "google.golang.org/grpc/resolver"
+	"myProject/micro/registry"
 	"time"
 )
 
@@ -26,7 +27,7 @@ func NewEtcdClient(opts ...EtcdClientOpt) *EtcdClient {
 	return res
 }
 
-func (e *EtcdClient) Dial(ctx context.Context, severName string) (*grpc.ClientConn, error) {
+func (e *EtcdClient) Dial(ctx context.Context, severName string, dialOptions ...grpc.DialOption) (*grpc.ClientConn, error) {
 	var opt []grpc.DialOption
 	if e.insecure {
 		opt = append(opt, grpc.WithInsecure())
@@ -37,6 +38,7 @@ func (e *EtcdClient) Dial(ctx context.Context, severName string) (*grpc.ClientCo
 	if e.balancer != nil {
 		opt = append(opt, grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, e.balancer.Name())))
 	}
+	opt = append(opt, dialOptions...)
 	return grpc.DialContext(ctx, severName, opt...)
 }
 
@@ -46,16 +48,16 @@ func ClientWithInsecure() EtcdClientOpt {
 	}
 }
 
-func ClientWithRegister(r Registry, timeout time.Duration) EtcdClientOpt {
+func ClientWithRegister(r registry.Registry, timeout time.Duration) EtcdClientOpt {
 	return func(client *EtcdClient) {
-		resolverBuilder := NewResolverBuilder(r, timeout)
+		resolverBuilder := registry.NewResolverBuilder(r, timeout)
 		client.resolver = resolverBuilder
 	}
 }
 
-func ClientWithBalancer(pb base.PickerBuilder) EtcdClientOpt {
+func ClientWithBalancer(name string, pb base.PickerBuilder) EtcdClientOpt {
 	return func(client *EtcdClient) {
-		builder := base.NewBalancerBuilder("DEMO_ROUND_ROBIN", pb, base.Config{HealthCheck: true})
+		builder := base.NewBalancerBuilder(name, pb, base.Config{HealthCheck: true})
 		balancer.Register(builder)
 		client.balancer = builder
 	}

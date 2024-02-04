@@ -1,4 +1,4 @@
-package orm
+package model
 
 import (
 	"database/sql"
@@ -31,21 +31,25 @@ func Test_parseModel(t *testing.T) {
 					ColName: "id",
 					GoName:  "Id",
 					Typ:     reflect.TypeOf(int64(0)),
+					Offset:  0,
 				},
 				{
 					ColName: "first_name",
 					GoName:  "FirstName",
 					Typ:     reflect.TypeOf(""),
+					Offset:  8,
 				},
 				{
 					ColName: "age",
 					GoName:  "Age",
 					Typ:     reflect.TypeOf(int8(0)),
+					Offset:  24,
 				},
 				{
 					ColName: "last_name",
 					GoName:  "LastName",
 					Typ:     reflect.TypeOf(&sql.NullString{}),
+					Offset:  32,
 				},
 			},
 			wantModel: &Model{
@@ -94,6 +98,7 @@ func Test_parseModel(t *testing.T) {
 					GoName:  "Name",
 					Typ:     reflect.TypeOf(""),
 					ColName: "test_name",
+					Offset:  0,
 				},
 			},
 		},
@@ -107,7 +112,7 @@ func Test_parseModel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			m, err := parseModel(tc.val)
+			m, err := ParseModel(tc.val)
 			assert.Equal(t, tc.wantErr, err)
 			if err != nil {
 				return
@@ -122,6 +127,7 @@ func Test_parseModel(t *testing.T) {
 				tc.wantModel.FieldMap[fd.GoName] = fd
 				tc.wantModel.ColumnMap[fd.ColName] = fd
 			}
+			tc.wantModel.Fields = tc.wantFields
 			assert.Equal(t, tc.wantModel, m)
 		})
 	}
@@ -169,4 +175,11 @@ func Test_underscoreName(t *testing.T) {
 			assert.Equal(t, tc.wantStr, res)
 		})
 	}
+}
+
+type TestModel struct {
+	Id        int64
+	FirstName string
+	Age       int8
+	LastName  *sql.NullString
 }

@@ -1,38 +1,33 @@
 package orm
 
-type predicate struct {
+type Predicate struct {
 	left  Expression
 	op    opType
 	right Expression
 }
 
-// Expression 标记接口，为了可以使用 predicate 跟 column
-type Expression interface {
-	expr()
-}
-
-func (p predicate) expr() {
+func (p Predicate) expr() {
 
 }
 
-func (left predicate) And(right predicate) predicate {
-	return predicate{
+func (left Predicate) And(right Predicate) Predicate {
+	return Predicate{
 		left:  left,
 		op:    opAND,
 		right: right,
 	}
 }
 
-func (left predicate) Or(right predicate) predicate {
-	return predicate{
+func (left Predicate) Or(right Predicate) Predicate {
+	return Predicate{
 		left:  left,
 		op:    opOR,
 		right: right,
 	}
 }
 
-func Not(right predicate) predicate {
-	return predicate{
+func Not(right Predicate) Predicate {
+	return Predicate{
 		op:    opNOT,
 		right: right,
 	}

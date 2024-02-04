@@ -1,4 +1,4 @@
-package middleware
+package opentelemetry
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"orm"
+	"myProject/orm"
 )
 
 const instrumentationName = "github.com/xjz9600/orm/middleware/tracing"
@@ -15,11 +15,11 @@ type opentelemetry struct {
 	tracer trace.Tracer
 }
 
-func (m opentelemetry) Build() orm.Middleware {
+func (m opentelemetry) Build() orm.MiddleWare {
 	if m.tracer == nil {
 		m.tracer = otel.GetTracerProvider().Tracer(instrumentationName)
 	}
-	return func(next orm.Handler) orm.Handler {
+	return func(next orm.HandlerFunc) orm.HandlerFunc {
 		return func(ctx context.Context, qc *orm.QueryContext) *orm.QueryResult {
 			tbl := qc.Model.TableName
 			spanCtx, span := m.tracer.Start(ctx, fmt.Sprintf("%s-%s", qc.Type, tbl))

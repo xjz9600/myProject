@@ -2,7 +2,7 @@
 // Source: github.com/redis/go-redis/v9 (interfaces: Cmdable)
 
 // Package redis_cache is a generated GoMock package.
-package redis_cache
+package redis_lock
 
 import (
 	context "context"

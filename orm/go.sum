@@ -45,8 +45,10 @@ github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjR
 github.com/rogpeppe/go-internal v1.10.0/go.mod h1:UQnix2H7Ngw/k4C5ijL5+65zddjncjaFoBhdsK/akog=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/xjz9600/protobuf v0.3.0 h1:ScAq4TVC5x4rDrnHMIpNDP3IcbhgbZsYu8vYD5SXVl4=
-github.com/xjz9600/protobuf v0.3.0/go.mod h1:WU8UJu7oGD41NDyfCn7g6rhQZIU7BZzBNa6pw+84THA=
+github.com/xjz9600/protobuf v0.4.0 h1:by3L1z1QST/ULyuzxyp2NzKjAm7xi5UnhkrqXog7+2k=
+github.com/xjz9600/protobuf v0.4.0/go.mod h1:WU8UJu7oGD41NDyfCn7g6rhQZIU7BZzBNa6pw+84THA=
+github.com/xjz9600/protobuf v0.5.0 h1:87hmuEuywwd61IwuqqOr3hj1IzRhB7SGZJwLDHblJhk=
+github.com/xjz9600/protobuf v0.5.0/go.mod h1:WU8UJu7oGD41NDyfCn7g6rhQZIU7BZzBNa6pw+84THA=
 go.opentelemetry.io/otel v1.19.0 h1:MuS/TNf4/j4IXsZuJegVzI1cwut7Qc00344rgH7p8bs=
 go.opentelemetry.io/otel v1.19.0/go.mod h1:i0QyjOq3UPoTzff0PJB2N66fb4S0+rSbSB15/oyH9fY=
 go.opentelemetry.io/otel/metric v1.19.0 h1:aTzpGtV0ar9wlV4Sna9sdJyII5jTVJEvKETPiOKwvpE=

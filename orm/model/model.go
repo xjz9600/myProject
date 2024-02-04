@@ -1,4 +1,4 @@
-package orm
+package model
 
 import (
 	"myProject/orm/internal/errs"
@@ -21,6 +21,7 @@ type Model struct {
 	TableName string
 	FieldMap  map[string]*Field
 	ColumnMap map[string]*Field
+	Fields    []*Field
 }
 
 type Field struct {
@@ -49,7 +50,7 @@ func parseTag(tag reflect.StructTag) (map[string]string, error) {
 	return res, nil
 }
 
-func parseModel(val any) (*Model, error) {
+func ParseModel(val any) (*Model, error) {
 	typ := reflect.TypeOf(val)
 	if typ.Kind() != reflect.Pointer || typ.Elem().Kind() != reflect.Struct {
 		return nil, errs.ErrPointerOnly
@@ -58,6 +59,7 @@ func parseModel(val any) (*Model, error) {
 	numFields := typ.NumField()
 	fieldMap := make(map[string]*Field)
 	columnMap := make(map[string]*Field)
+	fields := make([]*Field, 0, numFields)
 	for i := 0; i < numFields; i++ {
 		fd := typ.Field(i)
 		tags, err := parseTag(fd.Tag)
@@ -75,6 +77,7 @@ func parseModel(val any) (*Model, error) {
 		}
 		fieldMap[f.GoName] = f
 		columnMap[f.ColName] = f
+		fields = append(fields, f)
 	}
 	var tableName string
 	if tn, ok := val.(TableName); ok {
@@ -82,7 +85,7 @@ func parseModel(val any) (*Model, error) {
 	} else {
 		tableName = underscoreName(typ.Name())
 	}
-	md := &Model{TableName: tableName, FieldMap: fieldMap, ColumnMap: columnMap}
+	md := &Model{TableName: tableName, FieldMap: fieldMap, ColumnMap: columnMap, Fields: fields}
 	return md, nil
 }
 

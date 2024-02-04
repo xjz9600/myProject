@@ -3,25 +3,28 @@ package orm
 import (
 	"context"
 	"database/sql"
+	"myProject/orm/model"
 )
 
 type Deleter[T any] struct {
-	where []predicate
+	where []Predicate
 	builder
+	tableName string
 }
 
 func (d *Deleter[T]) Build() (*Query, error) {
+	d.quoter = '`'
 	d.sql.WriteString("DELETE FROM ")
 	if d.tableName != "" {
 		d.sql.WriteString(d.tableName)
 	} else {
-		model, err := parseModel(new(T))
+		model, err := model.ParseModel(new(T))
 		if err != nil {
 			return nil, err
 		}
 		d.model = model
 		d.sql.WriteByte('`')
-		d.sql.WriteString(model.tableName)
+		d.sql.WriteString(model.TableName)
 		d.sql.WriteByte('`')
 	}
 	if len(d.where) > 0 {
@@ -30,7 +33,7 @@ func (d *Deleter[T]) Build() (*Query, error) {
 		for i := 1; i < len(d.where); i++ {
 			p = p.And(d.where[i])
 		}
-		if err := d.buildExpression(p); err != nil {
+		if err := d.buildExpression(true, p); err != nil {
 			return nil, err
 		}
 	}
@@ -46,7 +49,7 @@ func (d *Deleter[T]) From(tableName string) *Deleter[T] {
 	return d
 }
 
-func (d *Deleter[T]) WHERE(p ...predicate) *Deleter[T] {
+func (d *Deleter[T]) WHERE(p ...Predicate) *Deleter[T] {
 	d.where = p
 	return d
 }

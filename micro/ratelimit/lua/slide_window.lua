@@ -1,15 +1,13 @@
-local val = redis.call('GET',KEYS[1])
-local limiter = tonumber(ARGV[1])
-if val == false then
-    if limiter < 1 then
-        return "true"
-    else
-        redis.call('SET',KEYS[1],1,'PX',ARGV[2])
-        return "false"
-    end
-elseif tonumber(val)<limiter then
-    redis.call('incr',KEYS[1])
-    return "false"
-else
+local now = tonumber(ARGV[1])
+local interval = tonumber(ARGV[2])
+local limiter = tonumber(ARGV[3])
+local min = now-interval
+redis.call('ZREMRANGEBYSCORE',KEYS[1],'-inf',min)
+local cnt = redis.call('ZCOUNT',KEYS[1],'-inf','+inf')
+if cnt >= limiter then
     return "true"
+else
+    redis.call('ZADD',KEYS[1],now,now)
+    redis.call('PEXPIRE',KEYS[1],interval)
+    return "false"
 end

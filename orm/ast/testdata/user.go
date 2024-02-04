@@ -1,13 +1,13 @@
 package testdata
 
 import (
-	"database/sql"
+	sqlx "database/sql"
 )
 
 type User struct {
 	Name     string
 	Age      *int
-	NickName *sql.NullString
+	NickName *sqlx.NullString
 	Picture  []byte
 }
 

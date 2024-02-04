@@ -8,10 +8,10 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"myProject/micro"
+	"myProject/micro/grpc_demo/gen"
+	"myProject/micro/registry/etcd"
 	"net/http"
-	"orm/micro"
-	"orm/micro/proto/gen"
-	"orm/micro/registry/etcd"
 	"testing"
 )
 
@@ -26,8 +26,7 @@ func TestServer(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		port := fmt.Sprintf(":809%d", i+1)
 		prom := NewPrometheusBuilder("user-service", "mySever", port, "测试")
-		server, err := micro.NewServer("user-service", micro.ServerWithRegistry(r), micro.ServerGrpcUnaryServerInterceptor(grpc.UnaryInterceptor(prom.BuildUnaryInterceptor())))
-		require.NoError(t, err)
+		server := micro.NewEtcdServer("user-service", micro.WithRegister(r), micro.WithUnaryServerInterceptor(grpc.UnaryInterceptor(prom.Build())))
 		us := &Server{}
 		gen.RegisterUserServiceServer(server, us)
 		require.NoError(t, err)

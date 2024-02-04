@@ -7,6 +7,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"myProject/orm/internal/errs"
 	"testing"
 )
 
@@ -14,8 +15,7 @@ func TestRawQuery_GET(t *testing.T) {
 	mockDb, mock, err := sqlmock.New()
 	defer mockDb.Close()
 	require.NoError(t, err)
-	db, err := OpenDB(mockDb)
-	require.NoError(t, err)
+	db := OpenDB(mockDb)
 	mock.ExpectQuery("SELECT .*").WillReturnError(errors.New("query error"))
 
 	mock.ExpectQuery("SELECT .*").WithArgs(-1).WillReturnRows(mock.NewRows([]string{"id", "first_name", "age", "last_name"}))
@@ -31,22 +31,22 @@ func TestRawQuery_GET(t *testing.T) {
 	}{
 		{
 			name:    "query err",
-			r:       RawQuery[TestModel](db, "SELECT * FROM `test_model`"),
+			r:       NewRawQuerier[TestModel](db, "SELECT * FROM `test_model`"),
 			wantErr: errors.New("query error"),
 		},
 		{
 			name:    "no rows",
-			r:       RawQuery[TestModel](db, "SELECT * FROM `test_model`WHERE `id` = ?", -1),
-			wantErr: ErrNoRows,
+			r:       NewRawQuerier[TestModel](db, "SELECT * FROM `test_model`WHERE `id` = ?", -1),
+			wantErr: errs.ErrRowNotFound,
 		},
 		{
 			name: "data",
-			r:    RawQuery[TestModel](db, "SELECT * FROM `test_model`WHERE `id` = ?", 1),
+			r:    NewRawQuerier[TestModel](db, "SELECT * FROM `test_model`WHERE `id` = ?", 1),
 			wantRes: &TestModel{
 				Id:        1,
 				FirstName: "Tom",
 				Age:       18,
-				LastName:  sql.NullString{Valid: true, String: "Jerry"},
+				LastName:  &sql.NullString{Valid: true, String: "Jerry"},
 			},
 		},
 	}

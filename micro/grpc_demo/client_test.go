@@ -15,5 +15,5 @@ func TestClient(t *testing.T) {
 	res, err := us.GetById(context.Background(), &gen.GetByIdReq{})
 	assert.NoError(t, err)
 	assert.Equal(t, res.User.Name, "JunZeXie")
-	assert.Equal(t, res.User.Id, 5)
+	assert.Equal(t, res.User.Id, int64(5))
 }

@@ -2,7 +2,6 @@ package orm
 
 import (
 	"context"
-	"database/sql"
 )
 
 // Queries 定义查询的终结方法,中间方法，定义在对应实现上
@@ -13,7 +12,7 @@ type Queries[T any] interface {
 
 // Executor 为INSERT UPDATE DELETE的终结方法
 type Executor interface {
-	Exec(ctx context.Context) (sql.Result, error)
+	Exec(ctx context.Context) Result
 }
 
 // QueryBuilder 生成sql语句跟参数

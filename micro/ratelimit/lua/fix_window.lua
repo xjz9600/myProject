@@ -1,13 +1,15 @@
-local var = redis.call('GET',KEYS[1])
-if var == false then
-    return redis.call('SET',KEYS[1],ARGV[1],'EX',ARGV[2])
-elseif var == ARGV[1] then
-    local exp = redis.call("EXPIRE",KEYS[1],ARGV[2])
-    if exp == 1 then
-        return 'OK'
+local val = redis.call('GET',KEYS[1])
+local limiter = tonumber(ARGV[1])
+if val == false then
+    if limiter < 1 then
+        return "true"
     else
-        return ''
+        redis.call('SET',KEYS[1],1,'PX',ARGV[2])
+        return "false"
     end
+elseif tonumber(val)<limiter then
+    redis.call('incr',KEYS[1])
+    return "false"
 else
-    return ''
+    return "true"
 end

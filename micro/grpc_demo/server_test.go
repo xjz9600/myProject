@@ -11,6 +11,7 @@ import (
 
 func TestServer(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:8082")
+	defer lis.Close()
 	assert.NoError(t, err)
 	grpcServer := grpc.NewServer()
 	gen.RegisterUserServiceServer(grpcServer, &Client{})

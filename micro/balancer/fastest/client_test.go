@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/stretchr/testify/require"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"orm/micro"
-	"orm/micro/proto/gen"
-	"orm/micro/registry/etcd"
+	"myProject/micro"
+	"myProject/micro/grpc_demo/gen"
+	"myProject/micro/registry/etcd"
 	"testing"
 	"time"
 )
@@ -18,17 +18,18 @@ func TestClient(t *testing.T) {
 	require.NoError(t, err)
 	r, err := etcd.NewRegistry(etcdClient)
 	require.NoError(t, err)
-	client, err := micro.NewClient(micro.ClientInsecure(),
-		micro.ClientWithRegistry(r, time.Second*3),
-		micro.ClientWithPickerBuilder("prometheus", &Builder{
-			Endpoint: "http://localhost:9090",
-			Interval: time.Second * 3,
+
+	client := micro.NewEtcdClient(micro.ClientWithInsecure(),
+		micro.ClientWithRegister(r, time.Second*3),
+		micro.ClientWithBalancer("prometheus", &BalancerBuilder{
+			Point:    "http://localhost:9090",
+			Duration: time.Second * 3,
 			Query:    "mySever{kind=\"user-service\",quantile=\"0.5\"}",
 		}))
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*100000)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10000)
 	defer cancel()
-	cc, err := client.Dial(ctx, "user-service")
+	cc, err := client.Dial(ctx, "registry:///user-service")
 	uc := gen.NewUserServiceClient(cc)
 	for i := 0; i < 10; i++ {
 		resp, err := uc.GetById(ctx, &gen.GetByIdReq{Id: 13})

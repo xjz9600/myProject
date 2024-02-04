@@ -1,9 +1,9 @@
-package middleware
+package prometheus
 
 import (
 	"context"
 	"github.com/prometheus/client_golang/prometheus"
-	"orm"
+	"myProject/orm"
 	"time"
 )
 
@@ -18,7 +18,7 @@ func NewPrometheusBuilder(name, subSystem, nameSpace, help string) *prometheusBu
 	return &prometheusBuilder{name, subSystem, nameSpace, help}
 }
 
-func (p *prometheusBuilder) Build() orm.Middleware {
+func (p *prometheusBuilder) Build() orm.MiddleWare {
 	vector := prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Name:      p.name,
 		Subsystem: p.subSystem,
@@ -33,7 +33,7 @@ func (p *prometheusBuilder) Build() orm.Middleware {
 		},
 	}, []string{"type", "table"})
 	prometheus.MustRegister(vector)
-	return func(next orm.Handler) orm.Handler {
+	return func(next orm.HandlerFunc) orm.HandlerFunc {
 		return func(ctx context.Context, qc *orm.QueryContext) *orm.QueryResult {
 			startTime := time.Now()
 			defer func() {

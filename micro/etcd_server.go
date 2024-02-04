@@ -1,14 +1,15 @@
-package registry
+package micro
 
 import (
 	"context"
 	"google.golang.org/grpc"
+	"myProject/micro/registry"
 	"net"
 	"time"
 )
 
 type EtcdServer struct {
-	register        Registry
+	register        registry.Registry
 	registerTimeout time.Duration
 	name            string
 	listener        net.Listener
@@ -25,13 +26,19 @@ func WithServerWeight(weight uint32) etcdServerOpt {
 	}
 }
 
+func WithUnaryServerInterceptor(serverOption ...grpc.ServerOption) etcdServerOpt {
+	return func(server *EtcdServer) {
+		server.Server = grpc.NewServer(serverOption...)
+	}
+}
+
 func WithServerGroup(group string) etcdServerOpt {
 	return func(server *EtcdServer) {
 		server.group = group
 	}
 }
 
-func WithRegister(register Registry) etcdServerOpt {
+func WithRegister(register registry.Registry) etcdServerOpt {
 	return func(server *EtcdServer) {
 		server.register = register
 	}
@@ -41,7 +48,7 @@ func NewEtcdServer(name string, opts ...etcdServerOpt) *EtcdServer {
 	res := &EtcdServer{
 		name:            name,
 		Server:          grpc.NewServer(),
-		registerTimeout: time.Second * 3,
+		registerTimeout: time.Second * 10,
 	}
 	for _, opt := range opts {
 		opt(res)
@@ -58,7 +65,7 @@ func (e *EtcdServer) Start(addr string) error {
 	if e.register != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), e.registerTimeout)
 		defer cancel()
-		err = e.register.Register(ctx, ServiceInstance{
+		err = e.register.Register(ctx, registry.ServiceInstance{
 			Name:   e.name,
 			Addr:   listener.Addr().String(),
 			Weight: e.weight,

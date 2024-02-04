@@ -48,9 +48,8 @@ func TestUseBroadCast(t *testing.T) {
 	require.NoError(t, err)
 	ctx, respChan := UseBroadCast(ctx)
 	go func() {
-		for rc := range respChan {
-			t.Log(rc.Reply)
-		}
+		rc := <-respChan
+		t.Log(rc)
 	}()
 	bd := NewClusterBuilder("user-service", r, grpc.WithInsecure())
 	cc, err := client.Dial(ctx, "registry:///user-service", grpc.WithUnaryInterceptor(bd.BuildUnaryClientInterceptor()))

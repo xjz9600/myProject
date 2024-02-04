@@ -1,4 +1,4 @@
-package gzip
+package gz
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -16,12 +16,12 @@ func TestCompressor(t *testing.T) {
 			input: []byte("hello world"),
 		},
 	}
-	c := GzipCompressor{}
+	c := GzipCompress{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			data, err := c.Compress(tc.input)
+			data, err := c.Compression(tc.input)
 			require.NoError(t, err)
-			data, err = c.Uncompress(data)
+			data, err = c.UnCompression(data)
 			require.NoError(t, err)
 			assert.Equal(t, tc.input, data)
 		})

@@ -1,15 +1,22 @@
-package etcd
+package registry
 
 import (
 	"context"
+	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"
-	"myProject/micro/registry"
 	"time"
 )
 
 type ResolverBuilder struct {
-	r       registry.Registry
+	r       Registry
 	timeout time.Duration
+}
+
+func NewResolverBuilder(r Registry, timeout time.Duration) *ResolverBuilder {
+	return &ResolverBuilder{
+		r:       r,
+		timeout: timeout,
+	}
 }
 
 func (b *ResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
@@ -18,8 +25,10 @@ func (b *ResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, 
 		r:       b.r,
 		target:  target,
 		timeout: b.timeout,
+		close:   make(chan struct{}),
 	}
 	res.resolve()
+	go res.watch()
 	return res, nil
 }
 
@@ -29,7 +38,7 @@ func (b *ResolverBuilder) Scheme() string {
 
 type Resolver struct {
 	cc      resolver.ClientConn
-	r       registry.Registry
+	r       Registry
 	target  resolver.Target
 	timeout time.Duration
 	close   chan struct{}
@@ -62,7 +71,8 @@ func (r *Resolver) resolve() {
 	address := make([]resolver.Address, len(instances))
 	for _, in := range instances {
 		addr := resolver.Address{
-			Addr: in.Addr,
+			Addr:       in.Addr,
+			Attributes: attributes.New("weight", in.Weight).WithValue("group", in.Group),
 		}
 		address = append(address, addr)
 	}

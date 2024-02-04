@@ -4,68 +4,70 @@ package integration
 
 import (
 	"context"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"orm"
-	"orm/internal/errs"
-	"orm/internal/test"
+	"myProject/orm"
+	"myProject/orm/internal/errs"
+	"myProject/orm/internal/test"
 	"testing"
-	"time"
 )
 
-type SelectSuite struct {
+type MysqlSelectSuite struct {
 	Suite
 }
 
-func TestMySQLSelect(t *testing.T) {
-	suite.Run(t, &SelectSuite{
-		Suite: Suite{
-			driver: "mysql",
-			dsn:    "root:root@tcp(localhost:13306)/integration_test",
+func (s *MysqlSelectSuite) SetupTest() {
+	s.Suite.SetupTest()
+	orm.NewInserter[test.SimpleStruct](s.db).WithValues(test.NewSimpleStruct(12)).Exec(context.Background())
+}
+
+func (s *MysqlSelectSuite) TearDownTest() {
+	orm.NewRawQuerier[any](s.db, "truncate `integration_test`.`simple_struct`;").Exec(context.Background())
+}
+
+func TestMysqlSelect(t *testing.T) {
+	suite.Run(t, &MysqlSelectSuite{
+		Suite{
+			driverName:     "mysql",
+			dataSourceName: "root:root@tcp(localhost:13306)/integration_test",
 		},
 	})
 }
 
-func (s *SelectSuite) SetupSuite() {
-	s.Suite.SetupSuite()
-	res := orm.NewInserter[test.SimpleStruct](s.db).Values(test.NewSimpleStruct(100)).Exec(context.Background())
-	require.NoError(s.T(), res.Err())
-}
-
-func (s *SelectSuite) TearDownSuite() {
-	orm.RawQuery[test.SimpleStruct](s.db, "TRUNCATE TABLE `simple_struct`").Exec(context.Background())
-}
-
-func (s *SelectSuite) TestGet() {
-	testCase := []struct {
+func (m *MysqlSelectSuite) TestSelect() {
+	db := m.db
+	t := m.T()
+	testCases := []struct {
 		name    string
-		s       *orm.Selector[test.SimpleStruct]
-		wantRes *test.SimpleStruct
 		wantErr error
+		s       *orm.Selector[test.SimpleStruct]
+		wantVal *test.SimpleStruct
 	}{
 		{
-			name:    "get data",
-			s:       orm.NewSelector[test.SimpleStruct](s.db).Where(orm.C("Id").EQ(100)),
-			wantRes: test.NewSimpleStruct(100),
+			name: "get data",
+			s: func() *orm.Selector[test.SimpleStruct] {
+				return orm.NewSelector[test.SimpleStruct](db).WithWhere(orm.C("Id").EQ(12))
+			}(),
+			wantVal: test.NewSimpleStruct(12),
 		},
 		{
-			name:    "no row",
-			s:       orm.NewSelector[test.SimpleStruct](s.db).Where(orm.C("Id").EQ(200)),
-			wantErr: errs.ErrNoRows,
+			name: "get no error",
+			s: func() *orm.Selector[test.SimpleStruct] {
+				return orm.NewSelector[test.SimpleStruct](db).WithWhere(orm.C("Id").EQ(15))
+			}(),
+			wantErr: errs.ErrRowNotFound,
 		},
 	}
 
-	for _, tc := range testCase {
-		s.T().Run(tc.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-			defer cancel()
-			res, err := tc.s.Get(ctx)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := tc.s.Get(context.Background())
 			assert.Equal(t, tc.wantErr, err)
 			if err != nil {
 				return
 			}
-			assert.Equal(t, tc.wantRes, res)
+			assert.Equal(t, tc.wantVal, res)
 		})
 	}
 }

@@ -6,72 +6,52 @@ import (
 	"testing"
 )
 
-func Test_BalancerPick(t *testing.T) {
-	testCases := []struct {
-		name      string
-		balance   *Balancer
-		wantErr   error
-		wantIndex int32
-		wantConn  testConn
-	}{
-		{
-			name: "start",
-			balance: &Balancer{
-				index: -1,
-				connects: []balancer.SubConn{
-					testConn{
-						name: "127.0.0.1:8080",
-					},
-					testConn{
-						name: "127.0.0.1:8081",
-					},
+func Test_WeightBalancerPick(t *testing.T) {
+	weightBalancer := &WeightBalancer{
+		connects: []*weightConn{
+			&weightConn{
+				c: testConn{
+					name: "weight-5",
 				},
+				weight:          5,
+				currentWeight:   5,
+				efficientWeight: 5,
 			},
-			wantIndex: 0,
-			wantConn: testConn{
-				name: "127.0.0.1:8080",
-			},
-		},
-		{
-			name: "end",
-			balance: &Balancer{
-				index: 1,
-				connects: []balancer.SubConn{
-					testConn{
-						name: "127.0.0.1:8080",
-					},
-					testConn{
-						name: "127.0.0.1:8081",
-					},
+			&weightConn{
+				c: testConn{
+					name: "weight-4",
 				},
+				weight:          4,
+				currentWeight:   4,
+				efficientWeight: 4,
 			},
-			wantIndex: 2,
-			wantConn: testConn{
-				name: "127.0.0.1:8080",
+			&weightConn{
+				c: testConn{
+					name: "weight-3",
+				},
+				weight:          3,
+				currentWeight:   3,
+				efficientWeight: 3,
 			},
-		},
-		{
-			name: "empty",
-			balance: &Balancer{
-				index: -1,
-			},
-			wantErr: balancer.ErrNoSubConnAvailable,
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			res, err := tc.balance.Pick(balancer.PickInfo{})
-			assert.Equal(t, tc.wantErr, err)
-			if err != nil {
-				return
-			}
-			assert.Equal(t, tc.balance.index, tc.wantIndex)
-			assert.Equal(t, tc.wantConn.name, res.SubConn.(testConn).name)
-		})
-	}
-}
+	res, err := weightBalancer.Pick(balancer.PickInfo{})
+	assert.NoError(t, err)
+	assert.Equal(t, res.SubConn.(testConn).name, "weight-5")
 
-type testConn struct {
-	name string
-	balancer.SubConn
+	res, err = weightBalancer.Pick(balancer.PickInfo{})
+	assert.NoError(t, err)
+	assert.Equal(t, res.SubConn.(testConn).name, "weight-4")
+
+	res, err = weightBalancer.Pick(balancer.PickInfo{})
+	assert.NoError(t, err)
+	assert.Equal(t, res.SubConn.(testConn).name, "weight-3")
+
+	res, err = weightBalancer.Pick(balancer.PickInfo{})
+	assert.NoError(t, err)
+	assert.Equal(t, res.SubConn.(testConn).name, "weight-5")
+
+	res, err = weightBalancer.Pick(balancer.PickInfo{})
+	assert.NoError(t, err)
+	assert.Equal(t, res.SubConn.(testConn).name, "weight-4")
 }

@@ -1,4 +1,4 @@
-package middleware
+package querylog
 
 import (
 	"context"
@@ -6,23 +6,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"orm"
+	"myProject/orm"
 	"testing"
 )
 
 func TestNewMiddlewareBuilder(t *testing.T) {
 	var query string
-	var args []any
-	m := (&queryLog{}).LogFunc(func(q string, as []any) {
-		query = q
-		args = as
+	var ag []any
+	m := NewBuilder().LogFunc(func(sql string, args ...any) {
+		query = sql
+		ag = args
 	})
-
-	db, err := orm.Open("sqlite3", "file:test.db?cache=shared&mode=memory", orm.DBWithMiddleware(m.Build()))
+	db, err := orm.Open("sqlite3", "file:test.db?cache=shared&mode=memory", orm.DBWithMiddleWare(m.Builder()))
 	require.NoError(t, err)
-	_, _ = orm.NewSelector[TestModel](db).Where(orm.C("Id").EQ(10)).Get(context.Background())
-	assert.Equal(t, "SELECT * FROM `test_model` WHERE `id` = ?;", query)
-	assert.Equal(t, []any{10}, args)
+	_, _ = orm.NewSelector[TestModel](db).WithWhere(orm.C("Id").EQ(10), orm.C("Age").EQ(18)).Get(context.Background())
+	assert.Equal(t, "SELECT * FROM `test_model` WHERE (`id` = ?) AND (`age` = ?);", query)
+	assert.Equal(t, []any{10, 18}, ag)
 	//orm.NewInserter[TestModel](db).Values(&TestModel{Id: 18}).Exec(context.Background())
 	//assert.Equal(t, "INSERT INTO `test_model`(`id`,`first_name`,`age`,`last_name`) VALUES (?,?,?,?);", query)
 	//assert.Equal(t, []any{int64(18), "", int8(0), sql.NullString{}}, args)

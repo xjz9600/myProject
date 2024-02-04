@@ -1,4 +1,4 @@
-package grpc_demo
+package grpc_resolver
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	conn, err := grpc.Dial("localhost:8082", grpc.WithInsecure())
+	conn, err := grpc.Dial("registry:///localhost:8082", grpc.WithInsecure(), grpc.WithResolvers(&Builder{}))
 	assert.NoError(t, err)
 	us := gen.NewUserServiceClient(conn)
 	res, err := us.GetById(context.Background(), &gen.GetByIdReq{})

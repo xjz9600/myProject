@@ -8,7 +8,7 @@ import (
 var _ propagation.TextMapCarrier = &metadataSupplier{}
 
 type metadataSupplier struct {
-	metadata *metadata.MD
+	metadata metadata.MD
 }
 
 func (s *metadataSupplier) Get(key string) string {
@@ -24,8 +24,8 @@ func (s *metadataSupplier) Set(key string, value string) {
 }
 
 func (s *metadataSupplier) Keys() []string {
-	out := make([]string, 0, len(*s.metadata))
-	for key := range *s.metadata {
+	out := make([]string, 0, len(s.metadata))
+	for key := range s.metadata {
 		out = append(out, key)
 	}
 	return out

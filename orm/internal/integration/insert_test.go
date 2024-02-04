@@ -7,57 +7,70 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"orm"
-	"orm/internal/test"
+	"myProject/orm"
+	"myProject/orm/internal/errs"
+	"myProject/orm/internal/test"
 	"testing"
-	"time"
 )
 
-type InsertSuite struct {
+type MysqlSuite struct {
 	Suite
 }
 
-func TestMySQLInsert(t *testing.T) {
-	suite.Run(t, &InsertSuite{
-		Suite: Suite{
-			driver: "mysql",
-			dsn:    "root:root@tcp(localhost:13306)/integration_test",
+func (m *MysqlSuite) TearDownSuite() {
+	orm.NewRawQuerier[any](m.db, "truncate `integration_test`.`simple_struct`;").Exec(context.Background())
+}
+
+func TestMysql(t *testing.T) {
+	suite.Run(t, &MysqlSuite{
+		Suite{
+			driverName:     "mysql",
+			dataSourceName: "root:root@tcp(localhost:13306)/integration_test",
 		},
 	})
 }
 
-func (i *InsertSuite) TestInsert() {
-	db := i.db
-	t := i.T()
+func (m *MysqlSuite) TestInsert() {
+	db := m.db
+	t := m.T()
 	testCases := []struct {
 		name         string
 		i            *orm.Inserter[test.SimpleStruct]
-		wantAffected int64
+		wantErr      error
+		rowsAffected int64
 	}{
 		{
-			name:         "insert one",
-			i:            orm.NewInserter[test.SimpleStruct](db).Values(test.NewSimpleStruct(12)),
-			wantAffected: 1,
+			// 查询返回错误
+			name: "zero error",
+			i: func() *orm.Inserter[test.SimpleStruct] {
+				return orm.NewInserter[test.SimpleStruct](db).WithValues()
+			}(),
+			wantErr: errs.ErrInsertZeroRow,
 		},
 		{
-			name: "insert multiple",
-			i: orm.NewInserter[test.SimpleStruct](db).Values(test.NewSimpleStruct(13),
-				test.NewSimpleStruct(14)),
-			wantAffected: 2,
+			name: "insert one data",
+			i: func() *orm.Inserter[test.SimpleStruct] {
+				return orm.NewInserter[test.SimpleStruct](db).WithValues(test.NewSimpleStruct(12))
+			}(),
+			rowsAffected: 1,
+		},
+		{
+			name: "insert multi data",
+			i: func() *orm.Inserter[test.SimpleStruct] {
+				return orm.NewInserter[test.SimpleStruct](db).WithValues(test.NewSimpleStruct(13), test.NewSimpleStruct(14))
+			}(),
+			rowsAffected: 2,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-			defer cancel()
-			res := tc.i.Exec(ctx)
-			affected, err := res.RowsAffected()
-			assert.NoError(t, err)
-			assert.Equal(t, tc.wantAffected, affected)
+			res := tc.i.Exec(context.Background())
+			rows, err := res.RowsAffected()
+			assert.Equal(t, err, tc.wantErr)
+			if err != nil {
+				return
+			}
+			assert.Equal(t, rows, tc.rowsAffected)
 		})
 	}
-}
-
-func (i *InsertSuite) TearDownTest() {
-	orm.RawQuery[test.SimpleStruct](i.db, "TRUNCATE TABLE `simple_struct`").Exec(context.Background())
 }

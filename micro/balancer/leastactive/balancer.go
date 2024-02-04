@@ -1,4 +1,4 @@
-package round_robin
+package leastactive
 
 import (
 	"google.golang.org/grpc/balancer"
@@ -7,35 +7,43 @@ import (
 )
 
 type BalancerBuilder struct {
-	size int32
 }
 
-func (b *BalancerBuilder) Build(info base.PickerBuildInfo) balancer.Picker {
-	conn := make([]balancer.SubConn, 0, len(info.ReadySCs))
+func (w *BalancerBuilder) Build(info base.PickerBuildInfo) balancer.Picker {
+	conn := make([]*activeConn, len(info.ReadySCs))
 	for k := range info.ReadySCs {
-		conn = append(conn, k)
+		wc := &activeConn{
+			c: k,
+		}
+		conn = append(conn, wc)
 	}
-	return &Balancer{
-		connects: conn,
-		index:    -1,
-	}
+	return &Balancer{connects: conn}
 }
 
 type Balancer struct {
-	connects []balancer.SubConn
-	index    int32
+	connects []*activeConn
 }
 
-func (b *Balancer) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
-	if len(b.connects) == 0 {
+func (w *Balancer) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
+	if len(w.connects) == 0 {
 		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable
 	}
-	idx := atomic.AddInt32(&b.index, 1)
-	c := idx % int32(len(b.connects))
+	var conn *activeConn
+	for _, cn := range w.connects {
+		if conn == nil || atomic.LoadUint32(&cn.cnt) < conn.cnt {
+			conn = cn
+		}
+	}
+	atomic.AddUint32(&conn.cnt, 1)
 	return balancer.PickResult{
-		SubConn: b.connects[c],
+		SubConn: conn.c,
 		Done: func(info balancer.DoneInfo) {
-
+			atomic.AddUint32(&conn.cnt, -1)
 		},
 	}, nil
+}
+
+type activeConn struct {
+	c   balancer.SubConn
+	cnt uint32
 }

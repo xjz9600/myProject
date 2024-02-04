@@ -1,15 +1,14 @@
-package orm
+package model
 
 import (
 	"myProject/orm/internal/errs"
-	"myProject/orm/model"
 	"reflect"
 	"sync"
 )
 
 type Register interface {
-	Get(entity any) (*model.Model, error)
-	Register(entity any, opt ...model.modelOpt) (*model.Model, error)
+	Get(entity any) (*Model, error)
+	Register(entity any, opt ...modelOpt) (*Model, error)
 }
 
 type syncMapRegister struct {
@@ -22,24 +21,24 @@ func NewSyncMapRegister() *syncMapRegister {
 
 type syncRegister struct {
 	mutex  sync.RWMutex
-	models map[reflect.Type]*model.Model
+	models map[reflect.Type]*Model
 }
 
 func NewSyncRegister() *syncRegister {
 	return &syncRegister{
-		models: map[reflect.Type]*model.Model{},
+		models: map[reflect.Type]*Model{},
 	}
 }
 
-func WithTableName(tableName string) model.modelOpt {
-	return func(m *model.Model) error {
+func WithTableName(tableName string) modelOpt {
+	return func(m *Model) error {
 		m.TableName = tableName
 		return nil
 	}
 }
 
-func WithColumnName(fieldName string, columnName string) model.modelOpt {
-	return func(m *model.Model) error {
+func WithColumnName(fieldName string, columnName string) modelOpt {
+	return func(m *Model) error {
 		if _, ok := m.FieldMap[fieldName]; !ok {
 			return errs.NewErrUnknownField(fieldName)
 		}
@@ -52,9 +51,9 @@ func WithColumnName(fieldName string, columnName string) model.modelOpt {
 	}
 }
 
-func (r *syncMapRegister) Register(entity any, opts ...model.modelOpt) (*model.Model, error) {
+func (r *syncMapRegister) Register(entity any, opts ...modelOpt) (*Model, error) {
 	typ := reflect.TypeOf(entity)
-	m, err := model.parseModel(entity)
+	m, err := ParseModel(entity)
 	if err != nil {
 		return nil, err
 	}
@@ -67,26 +66,27 @@ func (r *syncMapRegister) Register(entity any, opts ...model.modelOpt) (*model.M
 	return m, err
 }
 
-func (r *syncMapRegister) Get(entity any) (*model.Model, error) {
+func (r *syncMapRegister) Get(entity any) (*Model, error) {
 	typ := reflect.TypeOf(entity)
 	m, ok := r.models.Load(typ)
 	if ok {
-		return m.(*model.Model), nil
+		return m.(*Model), nil
 	}
-	m, err := model.parseModel(entity)
+	m, err := ParseModel(entity)
 	if err != nil {
 		return nil, err
 	}
 	// 会有重复解析的问题但是影响不大
 	r.models.Store(typ, m)
-	return m.(*model.Model), nil
+	return m.(*Model), nil
 }
 
-func (r *syncRegister) Get(entity any) (*model.Model, error) {
+func (r *syncRegister) Get(entity any) (*Model, error) {
 	typ := reflect.TypeOf(entity)
 	r.mutex.RLock()
 	m, ok := r.models[typ]
 	if ok {
+		r.mutex.RUnlock()
 		return m, nil
 	}
 	r.mutex.RUnlock()
@@ -96,8 +96,9 @@ func (r *syncRegister) Get(entity any) (*model.Model, error) {
 	if ok {
 		return m, nil
 	}
-	m, err := model.parseModel(entity)
+	m, err := ParseModel(entity)
 	if err != nil {
+		r.mutex.Unlock()
 		return nil, err
 	}
 	r.models[typ] = m
@@ -105,9 +106,9 @@ func (r *syncRegister) Get(entity any) (*model.Model, error) {
 	return m, nil
 }
 
-func (r *syncRegister) Register(entity any, opts ...model.modelOpt) (*model.Model, error) {
+func (r *syncRegister) Register(entity any, opts ...modelOpt) (*Model, error) {
 	typ := reflect.TypeOf(entity)
-	m, err := model.parseModel(entity)
+	m, err := ParseModel(entity)
 	if err != nil {
 		return nil, err
 	}
@@ -119,10 +120,12 @@ func (r *syncRegister) Register(entity any, opts ...model.modelOpt) (*model.Mode
 	r.mutex.Lock()
 	m, ok := r.models[typ]
 	if ok {
+		r.mutex.Unlock()
 		return m, nil
 	}
-	m, err = model.parseModel(entity)
+	m, err = ParseModel(entity)
 	if err != nil {
+		r.mutex.Unlock()
 		return nil, err
 	}
 	r.models[typ] = m

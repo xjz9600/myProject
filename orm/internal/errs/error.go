@@ -6,7 +6,9 @@ import (
 )
 
 var (
-	ErrPointerOnly = errors.New("orm: 只支持传入结构体，例如 User")
+	ErrPointerOnly   = errors.New("orm: 只支持传入结构体，例如 User")
+	ErrRowNotFound   = errors.New("orm: 未找到数据")
+	ErrInsertZeroRow = errors.New("orm: 未插入数据")
 )
 
 func NewErrUnknownField(fd string) error {

@@ -1,4 +1,4 @@
-package grpc_demo
+package opentelemetry
 
 import (
 	"context"
@@ -10,10 +10,12 @@ import (
 )
 
 func TestServer(t *testing.T) {
+	initZipkin(t)
 	lis, err := net.Listen("tcp", "localhost:8082")
 	defer lis.Close()
 	assert.NoError(t, err)
-	grpcServer := grpc.NewServer()
+	builder := &TelServerBuilder{}
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(builder.Build()))
 	gen.RegisterUserServiceServer(grpcServer, &Client{})
 	grpcServer.Serve(lis)
 }
