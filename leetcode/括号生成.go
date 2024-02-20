@@ -1,8 +1,15 @@
 package leetcode
 
+import "fmt"
+
 //https://leetcode.cn/problems/generate-parentheses/
 
 func generateParenthesis(n int) []string {
+	var aa string
+	for i := 0; i < len(aa); i++ {
+		as := aa[0]
+		fmt.Println(as)
+	}
 	return gen(0, 0, n, "")
 }
 

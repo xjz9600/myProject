@@ -11,6 +11,7 @@ package leetcode
 // [1,2],
 // [1,3],
 // [1,4],
+
 // ]
 func combine(n int, k int) (ans [][]int) {
 	var result []int

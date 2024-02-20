@@ -6,18 +6,19 @@ import "math/bits"
 // 输入：n = 4
 // 输出：[[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]]
 // 解释：如上图所示，4 皇后问题存在两个不同的解法。
-var queueStr [][]string
 
-func solveNQueens(n int) [][]string {
-	queueStr = [][]string{}
-	getData([]int{}, map[int]struct{}{}, map[int]struct{}{}, map[int]struct{}{}, 0, n)
-	return queueStr
+var queuePositions [][]string
+
+func solveNQueensV1(n int) [][]string {
+	queuePositions = [][]string{}
+	getDataV1([]int{}, map[int]struct{}{}, map[int]struct{}{}, map[int]struct{}{}, 0, n)
+	return queuePositions
 }
 
-func getData(re []int, col, left, right map[int]struct{}, row, n int) {
-	if n == row {
-		q := genQueue(re)
-		queueStr = append(queueStr, q)
+func getDataV1(re []int, col, left, right map[int]struct{}, row, n int) {
+	if row == n {
+		queuePosition := genQueue(re)
+		queuePositions = append(queuePositions, queuePosition)
 		return
 	}
 	for i := 0; i < n; i++ {
@@ -36,49 +37,47 @@ func getData(re []int, col, left, right map[int]struct{}, row, n int) {
 		col[i] = struct{}{}
 		left[l] = struct{}{}
 		right[r] = struct{}{}
-		getData(re, col, left, right, row+1, n)
+		getDataV1(re, col, left, right, row+1, n)
 		re = re[:len(re)-1]
-		delete(col, i)
-		delete(left, l)
-		delete(right, r)
 	}
+	return
 }
 
-func genQueue(res []int) []string {
+func genQueue(queue []int) []string {
 	var result []string
-	for i := 0; i < len(res); i++ {
-		var queue string
-		for j := 0; j < len(res); j++ {
-			if res[i] == j {
-				queue += "Q"
-			} else {
-				queue += "."
+	for i := 0; i < len(queue); i++ {
+		var res string
+		for j := 0; j < len(queue); j++ {
+			if queue[i] == j {
+				res += "Q"
+				continue
 			}
+			res += "."
 		}
-		result = append(result, queue)
+		result = append(result, res)
 	}
 	return result
 }
 
-func solveNQueensV1(n int) [][]string {
-	queueStr = [][]string{}
-	getData1([]int{}, 0, 0, 0, 0, n)
-	return queueStr
+func solveNQueens(n int) [][]string {
+	queuePositions = [][]string{}
+	getData([]int{}, 0, 0, 0, 0, n)
+	return queuePositions
 }
 
-func getData1(re []int, col, left, right, row, n int) {
-	if n == row {
-		q := genQueue(re)
-		queueStr = append(queueStr, q)
+func getData(re []int, col, left, right, row, n int) {
+	if row == n {
+		queuePosition := genQueue(re)
+		queuePositions = append(queuePositions, queuePosition)
 		return
 	}
-	availablePosition := ((1 << n) - 1) &^ (col | left | right)
-	for availablePosition != 0 {
-		position := availablePosition & (-availablePosition)
-		availablePosition = availablePosition & (availablePosition - 1)
+	availablePositions := (1<<n - 1) & ^(col | left | right)
+	for availablePositions != 0 {
+		position := availablePositions & (-availablePositions)
+		availablePositions = availablePositions & (availablePositions - 1)
 		selPosition := bits.OnesCount(uint(position - 1))
 		re = append(re, selPosition)
-		getData1(re, col|position, left|position<<1, right|position>>1, row+1, n)
+		getData(re, col|position, (left|position)<<1, (right|position)>>1, row+1, n)
 		re = re[:len(re)-1]
 	}
 }

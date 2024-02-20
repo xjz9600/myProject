@@ -1,7 +1,7 @@
 package leetcode
 
 // https://leetcode.cn/problems/subsets/submissions/500478254/
-// 输入：nums = [1,2,3]
+// 输入：nums = [1,2]
 // 输出：[[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]
 func subsets(nums []int) (ans [][]int) {
 	var dfs func(re []int, i int)
